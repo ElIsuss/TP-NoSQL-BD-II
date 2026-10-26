@@ -1,28 +1,37 @@
 # TP Unidad 7: NoSQL y nuevas formas de almacenamiento
-## Parte 1 — Migración de pedidos de PostgreSQL a MongoDB
 
-### 1. Identificación de tablas y diseño documental
+## Modelo y alcance
 
-En PostgreSQL se identificaron las tablas `pedido`, `detalle_pedido`, `cliente` y `producto`, junto con sus claves primarias y foráneas.
+El modelo relacional de `foodstore` usa `pedido`, `detalle_pedido`, `cliente` y `producto`. En MongoDB cada documento de `pedidos` conserva el ID del pedido, fecha, forma de pago y estado; embebe el ID de cliente y una etiqueta anonimizada, además de un arreglo `productos` con IDs de detalle/producto, nombre, cantidad y precio unitario histórico. No se exportan nombres reales, correos ni teléfonos. BSON Date tiene precisión de milisegundos; `fecha_hora_origen` conserva el timestamp PostgreSQL exacto, incluidas sus seis cifras de microsegundos.
 
-Para MongoDB se propuso una colección llamada `pedidos`. Cada documento conserva el identificador original del pedido, la fecha, la forma de pago, el estado, los datos esenciales del cliente y un arreglo con los productos comprados.
+Se migraron y verificaron contra la base local `foodstore` los cinco pedidos activos de IDs 1–5, con 17 líneas. Sus IDs, fechas, formas de pago, estados, IDs de cliente y líneas (producto, cantidad y precio histórico) coinciden con PostgreSQL. Las etiquetas de cliente en MongoDB son deliberadamente anonimizadas.
 
-Se eligió incrustar los datos del cliente y los detalles dentro del pedido para consultar toda la información relacionada en una sola lectura. Se conserva el precio unitario histórico de cada producto para no perder el valor registrado al momento de la compra.
+## Reglas de integridad
 
-### 2. Migración y verificación
+1. Mantener la relación pedido-cliente y las referencias de cada línea a su pedido y producto. En MongoDB estas referencias deben validarse desde la aplicación o mediante controles adecuados.
+2. La cantidad debe ser mayor que cero, el precio no negativo y no debe repetirse el mismo producto en un pedido. PostgreSQL puede proteger estas condiciones con `CHECK`, `FOREIGN KEY` y `UNIQUE`; deben preservarse al migrar.
 
-Se migraron cinco pedidos de PostgreSQL a MongoDB, conservando los identificadores originales y los datos principales de cada operación.
+## Consultas y verificación
 
-La verificación en MongoDB confirmó la existencia de cinco documentos y diez detalles de productos en total. También se comprobaron las fechas, las formas de pago, los estados y los datos esenciales de los clientes.
+`consultas_mongodb.js` carga los documentos en `food_store_nosql` mediante upsert para poder repetirlo sin borrar la colección y ejecuta las consultas de listado, estado, producto y total mayor a $250.000. Se ejecutó contra una instancia MongoDB temporal local; la salida está en `evidencias/evidencia_mongodb.txt`.
 
-Las fechas se muestran en UTC en MongoDB, lo que representa el mismo instante que la fecha original con su zona horaria.
+Las consultas equivalentes están en `consultas_postgresql.sql` y se ejecutaron en la base `foodstore` con una conexión de solo lectura. Un cotejo automático campo por campo confirmó coincidencia exacta de cabeceras, timestamps originales, IDs de clientes, líneas, cantidades y precios históricos entre PostgreSQL y MongoDB. La evidencia omite datos personales de clientes y está en `evidencias/evidencia_postgresql.txt`, `evidencias/evidencia_mongodb.txt` y `evidencias/comparacion_integridad.txt`.
 
-### 3. Reglas de integridad
+| Filtro | PostgreSQL (`foodstore`) | MongoDB | IDs coinciden |
+|---|---:|---:|---|
+| Estado `PENDIENTE` | 5: 1, 2, 3, 4, 5 | 5: 1, 2, 3, 4, 5 | Sí |
+| Producto `3485` | 1: 1 | 1: 1 | Sí |
+| Total mayor a `$250.000` | 1: 4 ($302.935,07) | 1: 4 ($302.935,07) | Sí |
 
-**Regla 1: integridad referencial.** Cada pedido debe corresponder a un cliente válido y cada detalle debe referenciar un pedido y un producto existentes en PostgreSQL. Durante la migración se conservaron los identificadores originales para mantener estas relaciones. MongoDB no aplica automáticamente las claves foráneas de PostgreSQL, por lo que estas relaciones deben controlarse mediante validaciones adicionales.
+El umbral de `$250.000` selecciona el pedido 4: es el único de estos cinco que supera el umbral. La suma usa cantidad por precio histórico. No se detectaron diferencias entre los resultados de PostgreSQL y MongoDB.
 
-**Regla 2: integridad de los detalles.** La cantidad de cada producto debe ser mayor que cero y el precio unitario debe ser mayor o igual que cero. Además, PostgreSQL impide repetir un mismo producto en dos detalles del mismo pedido mediante la restricción `UNIQUE (id_pedido, id_producto)`. Estas condiciones deben conservarse y validarse en MongoDB o en la aplicación.
+## Comparación de tecnologías e IA
 
-### Justificación del diseño
+La comparación generada con IA, el prompt utilizado, la validación de dos afirmaciones con documentación oficial y la recomendación técnica están en `explicacion.md`. La conclusión recomienda conservar PostgreSQL como fuente autoritativa y usar MongoDB como proyección de lectura solo si el acceso frecuente a pedidos completos justifica mantenerla.
 
-La estructura documental agrupa la información que normalmente se obtiene mediante uniones entre pedidos, clientes, detalles y productos. Esto simplifica la lectura de un pedido completo. Asimismo, almacenar el precio histórico en cada detalle permite preservar el importe registrado en la compra, independientemente de futuros cambios en el precio actual del producto.
+## Entrega y pendientes externos
+
+- Informe PDF: `entrega_TP_Unidad7.pdf` (máximo cinco páginas; la consigna original está aparte en `BDII_Unidad7_TP_FoodStore_NoSQL.pdf`).
+- Integrantes: Juan Martinez e Isaias Morinigo.
+- Scripts adjuntos: `consultas_mongodb.js` y `consultas_postgresql.sql`.
+- Evidencias de ejecución: carpeta `evidencias/`.

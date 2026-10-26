@@ -1,0 +1,63 @@
+Resultados PostgreSQL de origen: base foodstore, usuario postgres; conexion de solo lectura.
+Se consultaron los pedidos 1 a 5 y sus lineas activas. Se omitieron nombres, correos y telefonos de clientes.
+La salida conserva datos relacionales y precios historicos; no contiene credenciales.
+
+=== Seleccion de cinco pedidos ===
+id_pedido | fecha_hora | forma_pago | id_cliente | estado
+1 | 2026-03-02T10:59:23.002876-03:00 | TARJETA | 5240 | PENDIENTE
+2 | 2026-07-30T21:41:46.249399-03:00 | TRANSFERENCIA | 13999 | PENDIENTE
+3 | 2025-05-26T08:50:26.078931-03:00 | EFECTIVO | 8675 | PENDIENTE
+4 | 2026-02-15T18:57:38.228896-03:00 | TARJETA | 5580 | PENDIENTE
+5 | 2024-12-14T07:42:00.840984-03:00 | TRANSFERENCIA | 10045 | PENDIENTE
+
+=== Detalles y productos ===
+id_detalle_pedido | id_pedido | id_producto | producto | cantidad | precio_unitario
+1 | 1 | 3485 | Producto 3485 | 10 | 4602.06
+2 | 1 | 5684 | Producto 5684 | 20 | 1821.07
+3 | 1 | 17365 | Producto 17365 | 18 | 5257.88
+4 | 2 | 680 | Producto 680 | 12 | 2471.43
+5 | 2 | 5086 | Producto 5086 | 13 | 1104.61
+6 | 2 | 7991 | Producto 7991 | 17 | 1867.75
+7 | 2 | 21979 | Producto 21979 | 16 | 5478.70
+8 | 2 | 27033 | Producto 27033 | 9 | 4213.71
+9 | 3 | 9590 | Producto 9590 | 5 | 1006.17
+10 | 3 | 15650 | Producto 15650 | 6 | 2509.14
+11 | 3 | 23360 | Producto 23360 | 14 | 1797.21
+12 | 3 | 44776 | Producto 44776 | 8 | 4909.06
+13 | 4 | 31635 | Producto 31635 | 4 | 9177.95
+14 | 4 | 39507 | Producto 39507 | 10 | 6614.84
+15 | 4 | 43686 | Producto 43686 | 5 | 6291.38
+16 | 4 | 44566 | Producto 44566 | 19 | 8874.63
+17 | 5 | 35819 | Producto 35819 | 20 | 5012.78
+
+=== IDs de clientes (sin PII) ===
+id_cliente
+5240
+5580
+8675
+10045
+13999
+
+=== Consulta b: estado PENDIENTE ===
+id_pedido | estado | forma_pago
+1 | PENDIENTE | TARJETA
+2 | PENDIENTE | TRANSFERENCIA
+3 | PENDIENTE | EFECTIVO
+4 | PENDIENTE | TARJETA
+5 | PENDIENTE | TRANSFERENCIA
+
+=== Consulta c: producto 3485 ===
+id_pedido
+1
+
+=== Consulta d: total mayor a 250000 ===
+id_pedido | total
+4 | 302935.07
+
+=== Totales por pedido para justificar umbral ===
+id_pedido | total
+1 | 177083.84
+2 | 201351.43
+3 | 84519.11
+4 | 302935.07
+5 | 100255.60

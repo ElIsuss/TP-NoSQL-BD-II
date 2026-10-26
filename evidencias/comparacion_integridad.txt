@@ -1,0 +1,6 @@
+Comparacion automatica PostgreSQL foodstore (solo lectura) vs MongoDB temporal: COINCIDENCIA EXACTA.
+Pedidos verificados: 5 (IDs 1-5).
+Lineas activas verificadas: 17.
+Campos comparados: fecha_hora_origen con microsegundos/zona, forma de pago, estado, id_cliente, IDs y nombres de productos, cantidades, precios historicos.
+Precios almacenados como Decimal128 en MongoDB y comparados con NUMERIC de PostgreSQL.
+Datos personales: no se consultaron ni exportaron nombres, correos ni telefonos de clientes.
