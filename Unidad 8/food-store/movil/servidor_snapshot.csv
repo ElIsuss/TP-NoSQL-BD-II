@@ -1,0 +1,9 @@
+id,nombre,precio_centavos,stock,disponible,eliminado
+101,Hamburguesa Doble Queso,850000,25,t,f
+102,Papas Fritas Medianas,350000,40,t,f
+103,Gaseosa 500ml Cola,200000,50,t,f
+104,Cerveza Artesanal IPA,450000,0,f,f
+105,Sandwich Vegano Especial,700000,10,f,t
+3485,Empanada Criolla Carne,460206,100,t,f
+5684,Agua Mineral 500ml,182107,60,t,f
+
