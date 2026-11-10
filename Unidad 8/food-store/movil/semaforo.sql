@@ -4,7 +4,9 @@
 
 PRAGMA foreign_keys = ON;
 
--- 1. Tabla que almacena la instantánea recibida del servidor PostgreSQL
+-- 1. Tabla de staging de la instantánea recibida del servidor PostgreSQL.
+-- También está definida en schema_sqlite.sql para poder importar el CSV antes
+-- de ejecutar el semáforo.
 CREATE TABLE IF NOT EXISTS snapshot_servidor (
     id INTEGER PRIMARY KEY,
     nombre TEXT NOT NULL,
@@ -15,7 +17,7 @@ CREATE TABLE IF NOT EXISTS snapshot_servidor (
 );
 
 -- 2. Actualización de la caché local de la tablet a partir del snapshot del servidor
-INSERT OR REPLACE INTO producto_cache (id, nombre, precio_centavos, stock_visto, disponible, eliminado, fecha_de_copia)
+INSERT INTO producto_cache (id, nombre, precio_centavos, stock_visto, disponible, eliminado, fecha_de_copia)
 SELECT 
     id,
     nombre,
@@ -24,7 +26,15 @@ SELECT
     CASE WHEN disponible = 't' THEN 1 ELSE 0 END,
     CASE WHEN eliminado = 't' THEN 1 ELSE 0 END,
     datetime('now')
-FROM snapshot_servidor;
+FROM snapshot_servidor
+WHERE 1
+ON CONFLICT (id) DO UPDATE SET
+    nombre = excluded.nombre,
+    precio_centavos = excluded.precio_centavos,
+    stock_visto = excluded.stock_visto,
+    disponible = excluded.disponible,
+    eliminado = excluded.eliminado,
+    fecha_de_copia = excluded.fecha_de_copia;
 
 -- 3. Evaluación del Semáforo (Solo procesa solicitudes PENDIENTE)
 -- Prioridades:
@@ -112,4 +122,3 @@ SELECT
     motivo
 FROM cola_sync
 ORDER BY solicitud_uuid;
-

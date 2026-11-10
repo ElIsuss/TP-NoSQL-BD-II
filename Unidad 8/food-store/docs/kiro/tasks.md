@@ -7,7 +7,7 @@
 - [x] **Tarea 1.4**: Ejecutar scripts y generar `movil/foodstore_movil.db`.
 
 ## Fase 2: Sincronización y Simulación del Semáforo (Consigna 2)
-- [x] **Tarea 2.1**: Definir vista `v_snapshot_movil` en PostgreSQL y formato CSV para exportación (`servidor_snapshot.csv`).
+- [x] **Tarea 2.1**: Definir vista `v_snapshot_movil` en PostgreSQL y formato CSV para exportación (`servidor_snapshot.csv`). Script: `movil/v_snapshot_movil.sql`.
 - [x] **Tarea 2.2**: Desarrollar `movil/semaforo.sql` con prioridades Rojo (RECHAZADO), Amarillo (CONFLICTO) y Verde (SIMULADO_APROBADO).
 - [x] **Tarea 2.3**: Simular y registrar casos C2 a C6 demostrando idempotencia e invariancia en el servidor central.
 

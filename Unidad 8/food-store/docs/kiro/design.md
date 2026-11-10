@@ -21,9 +21,10 @@ Para asegurar consistencia de tipos estricta y cumplir con SQLite 3.37+, todas l
   - `solicitud_uuid` como clave primaria para evitar duplicaciones.
   - Máquina de estados: `'PENDIENTE'`, `'CONFLICTO'`, `'RECHAZADO'`, `'SIMULADO_APROBADO'`.
 
+La tabla de staging `snapshot_servidor` recibe el CSV generado por la vista PostgreSQL `v_snapshot_movil` antes de ejecutar el semáforo. Se crea junto con las cuatro tablas móviles para que el CSV pueda importarse antes de procesar solicitudes. El esquema actual expone `producto.activo`, pero no una columna independiente de baja lógica: la vista lo exporta como `disponible` y usa `FALSE` para `eliminado`. Los casos de baja lógica se simulan explícitamente en la instantánea local.
+
 ## 3. Máquina de Estados del Semáforo
 Al procesar las solicitudes en estado `'PENDIENTE'`:
 1. **Prioridad 1 (Rojo - RECHAZADO)**: Se evalúa si algún producto no existe, fue eliminado, no está disponible o el stock actual en el servidor es menor a la cantidad solicitada.
 2. **Prioridad 2 (Amarillo - CONFLICTO)**: Si no hay causal de rechazo, pero el `precio_centavos_visto` difiere del precio actual del servidor.
 3. **Prioridad 3 (Verde - SIMULADO_APROBADO)**: Si todas las líneas existen, tienen stock suficiente y los precios coinciden exactamente.
-

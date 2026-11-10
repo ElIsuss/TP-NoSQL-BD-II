@@ -9,8 +9,19 @@ DROP TABLE IF EXISTS cola_sync;
 DROP TABLE IF EXISTS item_borrador;
 DROP TABLE IF EXISTS pedido_borrador;
 DROP TABLE IF EXISTS producto_cache;
+DROP TABLE IF EXISTS snapshot_servidor;
 
--- 1. Tabla de caché local de productos (instantánea de solo lectura del servidor)
+-- 1. Staging de la instantánea recibida desde PostgreSQL
+CREATE TABLE snapshot_servidor (
+    id INTEGER PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    precio_centavos INTEGER NOT NULL,
+    stock INTEGER NOT NULL,
+    disponible TEXT NOT NULL CHECK (disponible IN ('t', 'f')),
+    eliminado TEXT NOT NULL CHECK (eliminado IN ('t', 'f'))
+);
+
+-- 2. Tabla de caché local de productos (instantánea de solo lectura del servidor)
 CREATE TABLE producto_cache (
     id INTEGER PRIMARY KEY,
     nombre TEXT NOT NULL,
@@ -21,7 +32,7 @@ CREATE TABLE producto_cache (
     fecha_de_copia TEXT NOT NULL
 ) STRICT;
 
--- 2. Tabla de cabecera de borradores de pedidos locales
+-- 3. Tabla de cabecera de borradores de pedidos locales
 CREATE TABLE pedido_borrador (
     id_local TEXT PRIMARY KEY,
     usuario TEXT NOT NULL,
@@ -29,7 +40,7 @@ CREATE TABLE pedido_borrador (
     fecha TEXT NOT NULL
 ) STRICT;
 
--- 3. Tabla de detalle de ítems de cada pedido borrador
+-- 4. Tabla de detalle de ítems de cada pedido borrador
 CREATE TABLE item_borrador (
     id_local TEXT NOT NULL,
     producto_id INTEGER NOT NULL,
@@ -40,7 +51,7 @@ CREATE TABLE item_borrador (
     FOREIGN KEY (producto_id) REFERENCES producto_cache(id)
 ) STRICT;
 
--- 4. Cola de sincronización de borradores hacia el servidor
+-- 5. Cola de sincronización de borradores hacia el servidor
 CREATE TABLE cola_sync (
     solicitud_uuid TEXT PRIMARY KEY,
     id_local TEXT NOT NULL,
@@ -48,4 +59,3 @@ CREATE TABLE cola_sync (
     motivo TEXT,
     FOREIGN KEY (id_local) REFERENCES pedido_borrador(id_local) ON DELETE CASCADE
 ) STRICT;
-

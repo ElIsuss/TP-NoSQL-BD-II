@@ -14,8 +14,9 @@
 food-store/
 ├── README.md                          <-- Guía de reproducción y ensayo de defensa
 ├── movil/
-│   ├── schema_sqlite.sql              <-- Consigna 1.b: DDL SQLite STRICT con FK activadas
+│   ├── schema_sqlite.sql              <-- Consigna 1.b: DDL SQLite STRICT, staging y FK activadas
 │   ├── pruebas_sqlite.sql             <-- Consigna 1.c: Transacciones, Caso C1 y C7
+│   ├── v_snapshot_movil.sql           <-- Consigna 2.a: Vista PostgreSQL para exportar el catálogo
 │   ├── semaforo.sql                   <-- Consigna 2.b: Lógica SQL del Semáforo
 │   ├── servidor_snapshot.csv          <-- Consigna 2.a: Instantánea exportada del servidor
 │   ├── casos_simulacion.sql           <-- Consigna 2.c: Casos C2 a C6 reproducibles
@@ -37,7 +38,7 @@ food-store/
 Para recrear y validar la totalidad del proyecto desde cero, siga los siguientes pasos:
 
 ### Paso 1: Creación del Esquema Móvil (Consigna 1.b)
-Crea las tablas `STRICT` en SQLite con claves foráneas activas:
+Crea las cuatro tablas móviles `STRICT`, la tabla de staging del snapshot y activa las claves foráneas:
 ```bash
 sqlite3 movil/foodstore_movil.db < movil/schema_sqlite.sql
 ```
@@ -49,18 +50,36 @@ sqlite3 movil/foodstore_movil.db < movil/pruebas_sqlite.sql
 ```
 
 ### Paso 3: Carga de la Instantánea del Servidor (Consigna 2.a)
-Importa el CSV exportado de la vista `v_snapshot_movil` y actualiza la caché local:
+Desde `psql`, conectado a la base PostgreSQL de Food Store y con el directorio actual en `food-store`, crea la vista y exporta el CSV:
 ```sql
--- Dentro de sqlite3 movil/foodstore_movil.db
+\i movil/v_snapshot_movil.sql
+\copy (SELECT id, nombre, precio_centavos, stock, disponible, eliminado FROM v_snapshot_movil ORDER BY id) TO 'movil/servidor_snapshot.csv' WITH CSV HEADER
+```
+
+Luego, dentro de `sqlite3 movil/foodstore_movil.db`, importa el CSV en la tabla de staging creada en el Paso 1:
+```sql
 .mode csv
 .import --skip 1 movil/servidor_snapshot.csv snapshot_servidor
 ```
 
 ### Paso 4: Ejecución de Casos de Sincronización y Semáforo (Consigna 2.b y 2.c)
-Carga y evalúa los borradores de pedidos en los escenarios C2, C3, C4, C5 y C6:
+Ejecuta primero el semáforo para cargar el catálogo importado en `producto_cache` y validar las solicitudes de pruebas previas. Después carga los borradores C2, C3, C4 y C5 y vuelve a ejecutar el semáforo:
 ```bash
+sqlite3 movil/foodstore_movil.db < movil/semaforo.sql
 sqlite3 movil/foodstore_movil.db < movil/casos_simulacion.sql
 sqlite3 movil/foodstore_movil.db < movil/semaforo.sql
+```
+El caso C6 se demuestra intentando insertar otra vez un UUID ya existente (por ejemplo, el de C5); la clave primaria de `cola_sync` debe rechazarlo. El CSV representa el esquema actual, que no tiene una columna independiente de baja lógica: `activo` se exporta como `disponible` y `eliminado` queda en `FALSE`. La baja lógica del caso C4 se simula explícitamente en `snapshot_servidor`.
+
+Para comprobar C6 en `sqlite3` después de los pasos anteriores, se puede repetir esta inserción: debe fallar por `UNIQUE constraint failed`.
+```sql
+INSERT INTO cola_sync (solicitud_uuid, id_local, estado, motivo)
+VALUES (
+  's5555555-aaaa-5555-5555-555555555555',
+  'b5555555-5555-5555-5555-555555555555',
+  'PENDIENTE',
+  'Reintento'
+);
 ```
 
 ---
@@ -87,4 +106,3 @@ Para la presentación oral de la semana 13, se estructuran los 10 minutos de la 
 - **Hallazgo descartado**: La IA sugirió guardar el campo `total_pedido` precalculado en MongoDB para ahorrarse el `$unwind` + `$group`.
 - **Fundamento del descarte**: Se descartó porque PostgreSQL es la autoridad sobre las líneas facturadas y duplicar el total generaría riesgo de desincronización ante notas de crédito o ajustes. Se comprobó en laboratorio que la agregación nativa tarda menos de 1 ms.
 - **Conclusión**: La arquitectura desacoplada garantiza operatividad al 100% en ferias sin señal, protegiendo la integridad del negocio central.
-
